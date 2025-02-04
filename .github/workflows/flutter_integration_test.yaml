@@ -1,0 +1,25 @@
+name: flutter integration test # Flutter統合テストの名前を指定
+
+on: [push, pull_request] # テストを実行するトリガーを指定。ここではプッシュとプルリクエスト
+
+jobs:
+  integration_test: # ジョブの名前を指定
+    strategy:
+      matrix:
+        device:
+          - "iPhone 16" # テストを実行するデバイスの種類を指定
+      fail-fast: false # 最初の失敗でジョブを中止しない設定
+    runs-on: macos-latest # テストを実行する環境を指定。ここでは最新のmacOS
+    steps:
+      - name: "start simulator" # ステップの名前を指定
+        timeout-minutes: 10 # ステップのタイムアウト時間を指定
+        run: |
+          xcrun simctl list devices
+          UDID=$(xcrun simctl list devices | grep 'iPhone 16 (' | awk -F '[()]' '{print $2}')
+          xcrun simctl boot "${UDID}"
+        shell: /bin/bash -e {0}
+      - uses: actions/checkout@v2 # リポジトリのコードをチェックアウト
+      - uses: subosito/flutter-action@v1 # Flutter環境をセットアップ
+        with:
+          channel: "stable" # Flutterの安定版チャンネルを使用
+      - run: "flutter test integration_test" # 統合テストを実行
